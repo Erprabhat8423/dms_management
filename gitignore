@@ -1,2 +1,64 @@
-collage_venv/
-collage_venv
+# Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
+__pycache__/*
+
+# Environment variables and settings
+.env
+
+# Virtual environment directories
+venv/
+venv/*
+
+# Media and static files (optional, if managed externally)
+media/
+staticfiles/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# macOS-specific files
+.DS_Store
+
+# Windows-specific files
+Thumbs.db
+
+# IDE-specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Python packaging
+*.egg
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# MyPy and Pylint cache
+.mypy_cache/
+.pyre/
+.pytype/
+pylint-report.txt
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Celery beat schedule file
+celerybeat-schedule
+
+# Security
+secrets.json
