@@ -1,7 +1,7 @@
 # users/urls.py
 
 from django.urls import path
-from .views import (
+from core.views.driver import (
     RegisterView,
     RegisterVerifyView,
     SendOTPView,
