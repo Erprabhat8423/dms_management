@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 import hashlib
+from django.core.validators import RegexValidator
+alphanumeric = RegexValidator(r'^[0-9a-zA-Z]*$', 'Only alphanumeric characters are allowed.')
+
 
 # Utility function to hash OTP
 def hash_otp(otp):
@@ -90,7 +93,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'Custom User'
         verbose_name_plural = 'Custom Users'
 
-# Profile Model
+# ================================Driver Profile Model
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
     full_name = models.CharField(max_length=200)
@@ -119,7 +122,7 @@ class College(models.Model):
         verbose_name = 'College'
         verbose_name_plural = 'Colleges'
 
-# College Timing Model
+# =========================== College Timing Model ======================
 class CollegeTiming(models.Model):
     start_shift = models.TimeField()
     end_shift = models.TimeField()
@@ -128,7 +131,7 @@ class CollegeTiming(models.Model):
     def __str__(self):
         return f"Timing: {self.start_shift} - {self.end_shift}"
 
-# Driver Profile Mapping Model
+# ===============================  Driver Profile Mapping Model =======================
 class DriverProfileMapping(models.Model):
     driver = models.OneToOneField(Profile, on_delete=models.CASCADE)
     college = models.ForeignKey(College, on_delete=models.CASCADE)
@@ -136,3 +139,54 @@ class DriverProfileMapping(models.Model):
 
     def __str__(self):
         return f"Driver {self.driver.full_name} at {self.college.college_name}"
+
+#========================  Parent Profile Model ============================
+class Parent_Profile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='parent_profile')
+    full_name = models.CharField(max_length=200)
+    profile_pic = models.ImageField(null=True, blank=True)
+    dob = models.CharField(max_length=20, null=True, blank=True)
+    email = models.CharField(max_length=254, null=True, blank=True)
+   
+    def __str__(self):
+        return f"parent of student:  {self.full_name}"
+
+# =========================== Temporary Parent Model =============================
+class TempParent(models.Model):
+
+    full_name = models.CharField(max_length=200)
+    dob = models.CharField(max_length=20)
+    email = models.CharField(max_length=254)
+    phone_number = models.CharField(max_length=15, unique=True)
+    
+    is_student = models.BooleanField(default=False)
+    otp_hash = models.CharField(max_length=64, null=True, blank=True)
+    otp_created_at = models.DateTimeField(default=timezone.now,null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    max_attempts = models.PositiveIntegerField(default=5)
+    attempt_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.phone_number})"
+
+
+# ======================= Chidren Profile Model ============================
+class Children(models.Model):
+    college = models.ForeignKey(College, on_delete=models.CASCADE, related_name='child')
+    collegetiming = models.ForeignKey(CollegeTiming, on_delete=models.CASCADE, related_name='child_timing')
+    parent = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='children')
+    
+
+    full_name = models.CharField(max_length=200)
+    dob = models.DateField()  # Changed from CharField to DateField
+    age = models.IntegerField()
+    children_class = models.CharField(max_length=50, blank=True, null=True, validators=[alphanumeric])
+
+    contact_person_name = models.CharField(max_length=200)
+    contact_person_number = models.CharField(max_length=15)
+    alternate_number = models.CharField(max_length=15, blank=True, null=True)  # Made optional
+
+    def __str__(self):
+        return f"Children of {self.parent}"

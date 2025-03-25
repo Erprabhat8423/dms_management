@@ -7,12 +7,14 @@ from .models import (
     College,
     CollegeTiming,
     DriverProfileMapping,
+    Parent_Profile,
+    Children
 )
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('phone_number', 'is_staff', 'is_driver', 'is_student', 'is_active', 'date_joined')
+    list_display = ('id','phone_number', 'is_staff', 'is_driver', 'is_student', 'is_active', 'date_joined','password')
     list_filter = ('is_staff', 'is_active')
     search_fields = ('phone_number',)
     ordering = ('-date_joined',)
@@ -21,7 +23,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'full_name', 'email', 'licence_no', 'vehicle_no', 'vehicle_type')
+    list_display = ('id','user', 'full_name', 'email', 'licence_no', 'vehicle_no', 'vehicle_type', 'profile_pic')
     search_fields = ('user__phone_number', 'full_name', 'email')
     list_filter = ('vehicle_type', 'user__is_active')
     readonly_fields = ('licence_no',)
@@ -46,7 +48,7 @@ class TempUserAdmin(admin.ModelAdmin):
 
 @admin.register(College)
 class CollegeAdmin(admin.ModelAdmin):
-    list_display = ('college_name', 'is_active', 'created_at')
+    list_display = ('id','college_name', 'is_active', 'created_at')
     search_fields = ('college_name',)
     list_filter = ('is_active',)
     ordering = ('college_name',)
@@ -55,7 +57,7 @@ class CollegeAdmin(admin.ModelAdmin):
 
 @admin.register(CollegeTiming)
 class CollegeTimingAdmin(admin.ModelAdmin):
-    list_display = ('start_shift', 'end_shift', 'created_at')
+    list_display = ('id','start_shift', 'end_shift', 'created_at')
     list_filter = ('start_shift', 'end_shift')
     ordering = ('start_shift',)
     readonly_fields = ('created_at',)
@@ -67,3 +69,15 @@ class DriverProfileMappingAdmin(admin.ModelAdmin):
     search_fields = ('driver__full_name', 'driver__phone_number', 'college__college_name')
     list_filter = ('college',)
     ordering = ('college',)
+
+
+@admin.register(Parent_Profile)
+class Parent_ProfileAdmin(admin.ModelAdmin):
+    list_display = ('id','user', 'full_name', 'email', 'dob',  'profile_pic')
+    search_fields = ('user__phone_number', 'full_name', 'email')
+
+@admin.register(Children)
+class ChildrenAdmin(admin.ModelAdmin):
+    list_display = ('id', 'full_name', 'college', 'collegetiming',  'parent')
+    
+    
