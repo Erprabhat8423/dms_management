@@ -4,6 +4,7 @@ from .models import (
     Profile,
     VehicleType,
     TempUser,
+    TempParent,
     College,
     CollegeTiming,
     DriverProfileMapping,
@@ -44,6 +45,14 @@ class TempUserAdmin(admin.ModelAdmin):
     search_fields = ('phone_number', 'full_name')
     list_filter = ('is_driver', 'is_student', 'is_active')
     ordering = ('-created_at',)
+
+@admin.register(TempParent)
+class TempParentAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'phone_number', 'profile_pic', 'is_student', 'created_at')
+    search_fields = ('phone_number', 'full_name')
+    list_filter = ( 'is_student', 'is_active')
+    ordering = ('-created_at',)
+
 
 
 @admin.register(College)

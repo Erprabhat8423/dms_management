@@ -134,6 +134,8 @@ class ParentRegistrationSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)
    
     is_student = serializers.BooleanField()
+    profile_pic = serializers.ImageField(required=False, allow_null=True)  # Add this field
+
    
 
     def validate_phone_number(self, value):
@@ -158,6 +160,8 @@ class ParentRegistrationSerializer(serializers.Serializer):
         otp_code = generate_otp()
         hashed_otp = hash_otp(otp_code)
 
+        profile_pic = validated_data.pop('profile_pic', None)
+
         # Create TempUser
         temp_parent = TempParent.objects.create(
             **validated_data,
@@ -165,6 +169,17 @@ class ParentRegistrationSerializer(serializers.Serializer):
             otp_created_at=timezone.now(),
         )
 
+        
+
+        # ✅ Create Parent Profile
+        parent_profile = Parent_Profile.objects.create(
+            #user=user,
+            full_name=validated_data["full_name"],
+            dob=validated_data.get("dob", ""),
+            email=validated_data.get("email", ""),
+            profile_pic=profile_pic
+        )
+        
         return temp_parent, otp_code
 
 

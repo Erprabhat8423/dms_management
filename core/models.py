@@ -144,7 +144,7 @@ class DriverProfileMapping(models.Model):
 class Parent_Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='parent_profile')
     full_name = models.CharField(max_length=200)
-    profile_pic = models.ImageField(null=True, blank=True)
+    profile_pic = models.ImageField(upload_to="parent_profiles/", null=True, blank=True)
     dob = models.CharField(max_length=20, null=True, blank=True)
     email = models.CharField(max_length=254, null=True, blank=True)
    
@@ -158,7 +158,8 @@ class TempParent(models.Model):
     dob = models.CharField(max_length=20)
     email = models.CharField(max_length=254)
     phone_number = models.CharField(max_length=15, unique=True)
-    
+    profile_pic = models.ImageField(upload_to="parent_pics/", null=True, blank=True)
+
     is_student = models.BooleanField(default=False)
     otp_hash = models.CharField(max_length=64, null=True, blank=True)
     otp_created_at = models.DateTimeField(default=timezone.now,null=True, blank=True)

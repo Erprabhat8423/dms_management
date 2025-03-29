@@ -10,6 +10,7 @@ from core.serializers import RegistrationSerializer, VerifyOTPSerializer, GetCus
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
 from core.utils import save_driver_profile_mapping
+from rest_framework.parsers import MultiPartParser, FormParser
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -23,17 +24,21 @@ class ParentRegisterView(generics.GenericAPIView):
     """
     serializer_class = ParentRegistrationSerializer
     permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, *args, **kwargs):
         """
         Handle registration step 1, where the OTP is generated and sent to the user's phone.
         """
+        print("Request Data:", request.data)  # Debugging
+        print("Request Files:", request.FILES) 
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # Create TempUser using validated data and OTP
         temp_user, otp_code = serializer.save()
-
+        
         # Simulate sending OTP via SMS (e.g., Twilio)
         logger.info(f"OTP for {temp_user.phone_number} is {otp_code}")  # Log for debugging (don't return OTP in production)
         
@@ -45,6 +50,8 @@ class ParentRegisterView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK
         )
+
+
 
 
 
