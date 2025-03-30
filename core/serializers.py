@@ -172,13 +172,13 @@ class ParentRegistrationSerializer(serializers.Serializer):
         
 
         # ✅ Create Parent Profile
-        parent_profile = Parent_Profile.objects.create(
-            #user=user,
-            full_name=validated_data["full_name"],
-            dob=validated_data.get("dob", ""),
-            email=validated_data.get("email", ""),
-            profile_pic=profile_pic
-        )
+        # parent_profile = Parent_Profile.objects.create(
+        #     #user=user,
+        #     full_name=validated_data["full_name"],
+        #     dob=validated_data.get("dob", ""),
+        #     email=validated_data.get("email", ""),
+        #     profile_pic=profile_pic
+        # )
         
         return temp_parent, otp_code
 
