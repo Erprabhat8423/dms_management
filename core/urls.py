@@ -39,11 +39,12 @@ urlpatterns = [
     path('driver-mapping-update-delete/<int:pk>/', DriverProfileMappingUpdateDeleteView.as_view(), name='driver-mapping-update-delete'),
     
     #===========================Parent Details==========================
-    path('parnt-register', ParentRegisterView.as_view(), name='parnt-register'),
+    path('parent-register', ParentRegisterView.as_view(), name='parent-register'),
     path('parent-verify-otp', ParentRegisterVerifyView.as_view(), name='parent-verify-otp'),
     path('parent-send-otp', ParentSendOTPView.as_view(), name='parent-send-otp'),
     path('parent-login', ParentLoginView.as_view(), name='parent-login'),
 
+    #===========================Children Details==========================
     path('children/add/', ChildrenCreateView.as_view(), name='add-child'),
     path('children/edit/<int:pk>/', ChildrenUpdateView.as_view(), name='edit-child'),
     path('children/delete/<int:pk>/', ChildrenDeleteView.as_view(), name='delete-child'),

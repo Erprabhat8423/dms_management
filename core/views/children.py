@@ -13,8 +13,6 @@ class ChildrenCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             child = serializer.save()
-
-           
             return Response({
                 "message": "data has been successfully registered", "crated_data": serializer.data
                

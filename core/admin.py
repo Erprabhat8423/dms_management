@@ -46,13 +46,13 @@ class TempUserAdmin(admin.ModelAdmin):
     list_filter = ('is_driver', 'is_student', 'is_active')
     ordering = ('-created_at',)
 
+
 @admin.register(TempParent)
 class TempParentAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'phone_number', 'profile_pic', 'is_student', 'created_at')
     search_fields = ('phone_number', 'full_name')
     list_filter = ( 'is_student', 'is_active')
     ordering = ('-created_at',)
-
 
 
 @admin.register(College)
@@ -84,6 +84,7 @@ class DriverProfileMappingAdmin(admin.ModelAdmin):
 class Parent_ProfileAdmin(admin.ModelAdmin):
     list_display = ('id','user', 'full_name', 'email', 'dob',  'profile_pic')
     search_fields = ('user__phone_number', 'full_name', 'email')
+
 
 @admin.register(Children)
 class ChildrenAdmin(admin.ModelAdmin):
