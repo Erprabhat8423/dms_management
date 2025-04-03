@@ -64,3 +64,5 @@ celerybeat-schedule
 secrets.json
 
 .early.coverage
+
+dms_venv/
