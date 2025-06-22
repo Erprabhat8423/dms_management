@@ -100,7 +100,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 #===================Parent Profile serializer=======================
 class ParentProfileSerializer(serializers.ModelSerializer):
-     class Meta:
+    """
+    Serializer for Parent_Profile data.
+    """
+
+    user = CustomUserSerializer()
+    class Meta:
         model = Parent_Profile
         fields = '__all__'
 
@@ -113,7 +118,6 @@ class GetCustomUserSerializer(serializers.ModelSerializer):
     Serializer for CustomUser data including profile details.
     """
     profile = ProfileSerializer()
-    #parent = ParentProfileSerializer() 
 
     class Meta:
         model = CustomUser
@@ -278,3 +282,10 @@ class DriverProfileMappingSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverProfileMapping
         fields = ['id', 'college', 'college_name', 'timing', 'start_shift', 'end_shift']
+
+
+
+class VehicleTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleType
+        fields = '__all__'

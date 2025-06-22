@@ -5,8 +5,25 @@ from django.utils import timezone
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from core.models import TempUser, CustomUser, Profile, hash_otp,College,CollegeTiming,DriverProfileMapping
-from core.serializers import RegistrationSerializer, VerifyOTPSerializer, GetCustomUserSerializer,ProfileListSerializer,ProfileUpdateSerializer,DriverProfileMappingSerializer
+from core.models import (
+    TempUser,
+    CustomUser,
+    Profile,
+    hash_otp,
+    College,
+    CollegeTiming,
+    DriverProfileMapping
+)
+from core.serializers import (
+    RegistrationSerializer,
+    VerifyOTPSerializer,
+    GetCustomUserSerializer,
+    ProfileListSerializer,
+    ProfileUpdateSerializer,
+    DriverProfileMappingSerializer,
+    CollegeSerializer,
+    VehicleTypeSerializer
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
 from core.utils import save_driver_profile_mapping
@@ -77,7 +94,7 @@ class RegisterVerifyView(generics.GenericAPIView):
             temp_user = TempUser.objects.get(phone_number=phone_number)
         except TempUser.DoesNotExist:
             return Response(
-                {"detail": "No pending registration found for this phone number."},
+                {"detail": "No pending registration found."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -85,7 +102,7 @@ class RegisterVerifyView(generics.GenericAPIView):
         if temp_user.attempt_count >= temp_user.max_attempts:
             temp_user.delete()
             return Response(
-                {"detail": "Maximum OTP attempts exceeded. Please register again."},
+                {"detail": "Maximum OTP attempts exceeded."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -260,6 +277,8 @@ class LoginView(generics.GenericAPIView):
                 profile = user.profile
                 driver_mapping = DriverProfileMapping.objects.get(driver=profile)
                 driver_data = {
+                    "id": user.id,
+                    "phone_number": user.phone_number,
                     "full_name": profile.full_name,
                     "profile_pic": profile.profile_pic.url if profile.profile_pic else None,
                     "dob": profile.dob,
@@ -306,11 +325,6 @@ class DriverProfileDetailView(generics.RetrieveAPIView):
             return Profile.objects.get(user_id=driver_id)  # Match with user_id in Profile
         except Profile.DoesNotExist:
             raise NotFound({"message": "No profile found for the given driver ID."})
-        # try:
-        #     return Profile.objects.get(id=driver_id)
-        # except Profile.DoesNotExist:
-        #     raise NotFound({"message": "No profile found for this driver ID"})
-
 
 
 class DriverProfileUpdateView(generics.UpdateAPIView):
@@ -323,7 +337,7 @@ class DriverProfileUpdateView(generics.UpdateAPIView):
         try:
             return Profile.objects.get(id=driver_id)
         except Profile.DoesNotExist:
-            return Response({"message": "No profile found for this driver ID"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -377,3 +391,40 @@ class DriverProfileMappingUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView
             return Response({"message": "Driver mapping deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except DriverProfileMapping.DoesNotExist:
             return Response({"detail": "Mapping not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ======================== API for College List
+
+class CollegeListAPIView(generics.ListAPIView):
+    serializer_class = CollegeSerializer
+    def get_queryset(self):
+        queryset = College.objects.all()
+        college_name = self.request.query_params.get('college_name')
+        is_active = self.request.query_params.get('is_active')
+
+        if college_name:
+            queryset = queryset.filter(college_name__icontains=college_name)
+
+        if is_active is not None:
+            # Convert string 'true'/'false' to boolean
+            is_active = is_active.lower() in ['true', '1']
+            queryset = queryset.filter(is_active=is_active)
+
+        return Response({"message": "College list fetched successfully", "data": CollegeSerializer(queryset, many=True).data}, status=status.HTTP_200_OK)
+
+
+class VehicleTypeListAPIView(generics.ListAPIView):
+    serializer_class = VehicleTypeSerializer
+
+    def get_queryset(self):
+        queryset = VehicleType.objects.all()
+        vehicle_name = self.request.query_params.get('vehicle_name')
+        is_active = self.request.query_params.get('is_active')
+
+        if vehicle_name:
+            queryset = queryset.filter(vehicle_name__icontains=vehicle_name)
+
+        if is_active is not None:
+            is_active = is_active.lower() in ['true', '1']
+            queryset = queryset.filter(is_active=is_active)
+        return Response({"message": "Vehicle type list fetched successfully", "data": VehicleTypeSerializer(queryset, many=True).data}, status=status.HTTP_200_OK)

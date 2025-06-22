@@ -5,8 +5,24 @@ from django.utils import timezone
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from core.models import TempUser,TempParent, CustomUser, Profile, hash_otp,College,CollegeTiming,DriverProfileMapping,Parent_Profile
-from core.serializers import RegistrationSerializer, VerifyOTPSerializer, GetCustomUserSerializer,ParentRegistrationSerializer,ParentProfileSerializer
+from core.models import (
+    TempUser,
+    TempParent,
+    CustomUser,
+    Profile,
+    hash_otp,
+    College,
+    CollegeTiming,
+    DriverProfileMapping,
+    Parent_Profile
+)
+from core.serializers import (
+    RegistrationSerializer,
+    VerifyOTPSerializer,
+    GetCustomUserSerializer,
+    ParentRegistrationSerializer,
+    ParentProfileSerializer
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
 from core.utils import save_driver_profile_mapping
@@ -185,8 +201,6 @@ class ParentSendOTPView(generics.GenericAPIView):
         )
 
 
-
-
 class ParentLoginView(generics.GenericAPIView):
     """
     Login using phone number and OTP.
@@ -250,7 +264,7 @@ class ParentLoginView(generics.GenericAPIView):
 
         # Return JWT tokens, user data, and parent profile
         return Response({
-            "user": user_data,
+            # "user": user_data,
             "parent_profile": parent_profile_data,
             "refresh": str(refresh),
             "access": str(refresh.access_token),

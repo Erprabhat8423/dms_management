@@ -9,7 +9,9 @@ from core.views.driver import (
     LoginView,
     DriverProfileDetailView,
     DriverProfileUpdateView,
-    DriverProfileMappingUpdateDeleteView
+    DriverProfileMappingUpdateDeleteView,
+    CollegeListAPIView,
+    VehicleTypeListAPIView
 )
 
 from core.views.parent import (
@@ -49,5 +51,8 @@ urlpatterns = [
     path('children/edit/<int:pk>/', ChildrenUpdateView.as_view(), name='edit-child'),
     path('children/delete/<int:pk>/', ChildrenDeleteView.as_view(), name='delete-child'),
     path('children/list/<int:parent_id>/', ChildrenListByParentView.as_view(), name='list-children-by-parent'),
+    #============================Master data==========================
+    path('colleges/', CollegeListAPIView.as_view(), name='college-list'),
+    path('vehicle-types/', VehicleTypeListAPIView.as_view(), name='vehicle-type-list'),
     
 ]

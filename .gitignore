@@ -66,3 +66,4 @@ secrets.json
 .early.coverage
 
 dms_venv/
+__pycache__
