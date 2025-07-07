@@ -51,8 +51,6 @@ urlpatterns = [
     path('parent-login', ParentLoginView.as_view(), name='parent-login'),
     #===========================Parent Profile Details==========================
     path('parent-profile-update/<int:pk>/', ParentProfileUpdateView.as_view(), name='parent-profile-update'),
-
-
     #===========================Children Details==========================
     path('children/add/', ChildrenCreateView.as_view(), name='add-child'),
     path('children/edit/<int:pk>/', ChildrenUpdateView.as_view(), name='edit-child'),
