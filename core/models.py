@@ -133,9 +133,12 @@ class CollegeTiming(models.Model):
 
 # ===============================  Driver Profile Mapping Model =======================
 class DriverProfileMapping(models.Model):
-    driver = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    driver = models.ForeignKey(Profile, on_delete=models.CASCADE)
     college = models.ForeignKey(College, on_delete=models.CASCADE)
     timing = models.ForeignKey(CollegeTiming, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ['driver', 'college', 'timing']  # Prevent duplicate mappings
 
     def __str__(self):
         return f"Driver {self.driver.full_name} at {self.college.college_name}"

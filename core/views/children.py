@@ -14,11 +14,11 @@ class ChildrenCreateView(generics.CreateAPIView):
         if serializer.is_valid():
             child = serializer.save()
             return Response({
-                "message": "data has been successfully registered", "crated_data": serializer.data
-               
+                "message": "data has been successfully registered", 
+                "created_data": serializer.data
             }, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ====================== Update a child entry==================
 

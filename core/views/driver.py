@@ -2,7 +2,7 @@ import random
 import hashlib
 import logging
 from django.utils import timezone
-from rest_framework import status, generics
+from rest_framework import status, generics,mixins
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from core.models import (
@@ -12,7 +12,8 @@ from core.models import (
     hash_otp,
     College,
     CollegeTiming,
-    DriverProfileMapping
+    DriverProfileMapping,
+    VehicleType
 )
 from core.serializers import (
     RegistrationSerializer,
@@ -275,7 +276,20 @@ class LoginView(generics.GenericAPIView):
         if user.is_driver:
             try:
                 profile = user.profile
-                driver_mapping = DriverProfileMapping.objects.get(driver=profile)
+                driver_mappings = DriverProfileMapping.objects.filter(driver=profile)
+                
+                # Prepare mappings data
+                mappings_data = []
+                for mapping in driver_mappings:
+                    mappings_data.append({
+                        "id": mapping.id,
+                        "college": mapping.college.college_name,
+                        "shift": {
+                            "start": mapping.timing.start_shift,
+                            "end": mapping.timing.end_shift
+                        }
+                    })
+                
                 driver_data = {
                     "id": user.id,
                     "phone_number": user.phone_number,
@@ -285,15 +299,11 @@ class LoginView(generics.GenericAPIView):
                     "email": profile.email,
                     "licence_no": profile.licence_no,
                     "licence_exp_date": profile.licence_exp_date,
-                    "vehicle_type": driver_mapping.driver.vehicle_type.vehicle_name if driver_mapping.driver.vehicle_type else None,
-                    "vehicle_no": driver_mapping.driver.vehicle_no,
-                    "college": driver_mapping.college.college_name,
-                    "shift": {
-                        "start": driver_mapping.timing.start_shift,
-                        "end": driver_mapping.timing.end_shift
-                    }
+                    "vehicle_type": profile.vehicle_type.vehicle_name if profile.vehicle_type else None,
+                    "vehicle_no": profile.vehicle_no,
+                    "mappings": mappings_data  # List of all college-shift mappings
                 }
-            except (Profile.DoesNotExist, DriverProfileMapping.DoesNotExist):
+            except Profile.DoesNotExist:
                 driver_data = None
 
         # Clean up OTP fields after successful login (optional, for security reasons)
@@ -311,10 +321,7 @@ class LoginView(generics.GenericAPIView):
         }, status=status.HTTP_200_OK)
 
 
-# ======================== API View for  Updating  Driver Profile
-
-
-
+# ======================== API View for  getting  Driver Profile
 class DriverProfileDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileListSerializer
@@ -322,7 +329,7 @@ class DriverProfileDetailView(generics.RetrieveAPIView):
     def get_object(self):
         driver_id = self.kwargs['driver_id']
         try:
-            return Profile.objects.get(user_id=driver_id)  # Match with user_id in Profile
+            return Profile.objects.get(user_id=driver_id)
         except Profile.DoesNotExist:
             raise NotFound({"message": "No profile found for the given driver ID."})
 
@@ -330,19 +337,45 @@ class DriverProfileDetailView(generics.RetrieveAPIView):
 class DriverProfileUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileUpdateSerializer
-    
+    parser_classes = [MultiPartParser, FormParser]
+    queryset = Profile.objects.all()
 
     def get_object(self):
-        driver_id = self.kwargs['driver_id']
+        """
+        Retrieve the Profile object based on driver_id from URL parameters.
+        Ensure the authenticated user can only update their own profile.
+        """
+        driver_id = self.kwargs.get('driver_id')
         try:
-            return Profile.objects.get(id=driver_id)
+            # Get the CustomUser by ID
+            driver_user = get_object_or_404(CustomUser, id=driver_id)
+            
+            # Check if the authenticated user is the same as the driver being updated
+            if self.request.user != driver_user:
+                return Response(
+                    {"detail": "You can only update your own profile."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Get the profile associated with the driver
+            profile = get_object_or_404(Profile, user=driver_user)
+            return profile
+            
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"detail": "Driver not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Profile.DoesNotExist:
-            return Response({"message": "profile not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Driver profile not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if isinstance(instance, Response):
-            return instance  # Return error response if profile not found
+            return instance
 
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
@@ -397,6 +430,7 @@ class DriverProfileMappingUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView
 
 class CollegeListAPIView(generics.ListAPIView):
     serializer_class = CollegeSerializer
+
     def get_queryset(self):
         queryset = College.objects.all()
         college_name = self.request.query_params.get('college_name')
@@ -406,11 +440,18 @@ class CollegeListAPIView(generics.ListAPIView):
             queryset = queryset.filter(college_name__icontains=college_name)
 
         if is_active is not None:
-            # Convert string 'true'/'false' to boolean
             is_active = is_active.lower() in ['true', '1']
             queryset = queryset.filter(is_active=is_active)
 
-        return Response({"message": "College list fetched successfully", "data": CollegeSerializer(queryset, many=True).data}, status=status.HTTP_200_OK)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "message": "College list fetched successfully",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 class VehicleTypeListAPIView(generics.ListAPIView):
@@ -427,4 +468,103 @@ class VehicleTypeListAPIView(generics.ListAPIView):
         if is_active is not None:
             is_active = is_active.lower() in ['true', '1']
             queryset = queryset.filter(is_active=is_active)
-        return Response({"message": "Vehicle type list fetched successfully", "data": VehicleTypeSerializer(queryset, many=True).data}, status=status.HTTP_200_OK)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "message": "Vehicle type list fetched successfully",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+#=======================Create College Time Mapping===========================
+
+class CollegeMappingCreateView(generics.CreateAPIView):
+    """
+    API for creating a new driver's college and shift mapping.
+    Similar to RegisterVerifyView but for adding new mappings to existing drivers.
+    """
+    serializer_class = DriverProfileMappingSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new college and shift mapping for the authenticated driver.
+        Expects: college_name, start_shift, end_shift
+        """
+        # Ensure the user is a driver
+        if not request.user.is_driver:
+            return Response(
+                {"detail": "Only drivers can create college mappings."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get required fields from request
+        college_name = request.data.get('college_name')
+        start_shift = request.data.get('start_shift')
+        end_shift = request.data.get('end_shift')
+        
+        # Validate required fields
+        if not all([college_name, start_shift, end_shift]):
+            return Response(
+                {"detail": "college_name, start_shift, and end_shift are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Get the driver's profile
+            profile = request.user.profile
+            
+            # Check if this exact mapping already exists
+            college, college_created = College.objects.get_or_create(college_name=college_name, defaults={'is_active': True})
+            timing, timing_created = CollegeTiming.objects.get_or_create(start_shift=start_shift, end_shift=end_shift)
+            
+            # Check if mapping already exists
+            existing_mapping = DriverProfileMapping.objects.filter(
+                driver=profile,
+                college=college,
+                timing=timing
+            ).first()
+            
+            if existing_mapping:
+                # Return existing mapping
+                serializer = self.get_serializer(existing_mapping)
+                return Response({
+                    "message": "Driver profile mapping already exists.",
+                    "data": serializer.data
+                }, status=status.HTTP_200_OK)
+            
+            # Create new mapping
+            with transaction.atomic():
+                driver_mapping = DriverProfileMapping.objects.create(
+                    driver=profile,
+                    college=college,
+                    timing=timing
+                )
+                
+                # Serialize the mapping
+                serializer = self.get_serializer(driver_mapping)
+                
+                return Response({
+                    "message": f"Mapping Created Successfully .",
+                    "data": serializer.data
+                }, status=status.HTTP_201_CREATED)
+                
+        except Profile.DoesNotExist:
+            return Response(
+                {"detail": "Driver profile not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            # Handle specific database constraint errors
+            if "UNIQUE constraint failed" in str(e):
+                return Response(
+                    {"detail": "A mapping with this combination already exists for this driver."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(
+                {"detail": f"An unexpected error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

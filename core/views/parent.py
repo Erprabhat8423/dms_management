@@ -2,7 +2,7 @@ import random
 import hashlib
 import logging
 from django.utils import timezone
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from core.models import (
@@ -21,14 +21,17 @@ from core.serializers import (
     VerifyOTPSerializer,
     GetCustomUserSerializer,
     ParentRegistrationSerializer,
-    ParentProfileSerializer
+    ParentProfileSerializer,
+    ParentProfileUpdateSerializer,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import transaction
 from core.utils import save_driver_profile_mapping
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
 # Set up logging
 logger = logging.getLogger(__name__)
+
 
 
 class ParentRegisterView(generics.GenericAPIView):
@@ -125,7 +128,6 @@ class ParentRegisterVerifyView(generics.GenericAPIView):
         # OTP is correct -> Create real user
         user = CustomUser.objects.create_user(
             phone_number=temp_user.phone_number,
-            
             is_student=temp_user.is_student,
         )
         profile = Parent_Profile.objects.create(
@@ -143,6 +145,7 @@ class ParentRegisterVerifyView(generics.GenericAPIView):
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         user_data = GetCustomUserSerializer(user).data
+        user_data['parent_profile'] = ParentProfileSerializer(profile).data
 
         return Response({
             "user": user_data,
@@ -269,4 +272,34 @@ class ParentLoginView(generics.GenericAPIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
             "message": "Login successful"
+        }, status=status.HTTP_200_OK)
+
+
+# ======================== Parent Profile Update Views ========================
+
+class ParentProfileUpdateView(generics.UpdateAPIView):
+    """
+    Update parent profile (name, email, profile_pic, dob).
+    All fields are optional (partial update supported).
+    """
+    serializer_class = ParentProfileUpdateSerializer
+    parser_classes = [MultiPartParser, FormParser]  # for image/file support
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        return Parent_Profile.objects.all()
+
+    def get_object(self):
+        parent_id = self.kwargs.get('pk')
+        parent_user = get_object_or_404(CustomUser, id=parent_id, is_student=True)
+        return get_object_or_404(Parent_Profile, user=parent_user)
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            "message": "Parent profile updated successfully",
+            "updated_data": serializer.data
         }, status=status.HTTP_200_OK)

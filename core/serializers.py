@@ -110,7 +110,15 @@ class ParentProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ParentProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parent_Profile
+        fields = ['full_name', 'email', 'profile_pic', 'dob']
 
+    def validate_email(self, value):
+        if value and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', value):
+            raise serializers.ValidationError("Enter a valid email address.")
+        return value
 
 
 class GetCustomUserSerializer(serializers.ModelSerializer):
@@ -289,3 +297,4 @@ class VehicleTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleType
         fields = '__all__'
+
